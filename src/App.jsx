@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { FinanceProvider, useFinance } from './context/FinanceContext';
 import Navbar from './components/Navbar';
 import QuickDailyView from './components/Dashboard/QuickDailyView';
@@ -19,7 +19,17 @@ import WeeklyMeetingGuide from './components/WeeklyMeeting/WeeklyMeetingGuide';
 import BackupModal from './components/Modals/BackupModal';
 import { ShieldCheck, Heart, Mic, Zap } from 'lucide-react';
 
-function AppContent() {
+import { auth } from './firebase';
+import { onAuthStateChanged, signOut } from 'firebase/auth';
+import Login from './components/Auth/Login';
+import { PWAInstallButton } from './components/PWAInstallButton';
+
+const ALLOWED_EMAILS = [
+  'natantelles@gmail.com',
+  'juliapires.contas@gmail.com'
+];
+
+function AppContent({ user }) {
   const [appMode, setAppMode] = useState('DAILY'); // 'DAILY' (Modo Rápido Limpo) ou 'FULL' (Modo Estratégico Completo)
   const [activeTab, setActiveTab] = useState('dashboard');
   const [showBackupModal, setShowBackupModal] = useState(false);
@@ -37,6 +47,12 @@ function AppContent() {
 
       {/* Conteúdo Central */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 py-6 space-y-6">
+        
+        {/* PWA Install Button when applicable */}
+        <div className="flex justify-end mb-4">
+          <PWAInstallButton />
+        </div>
+
         {/* Se estiver no MODO DIÁRIO RÁPIDO */}
         {appMode === 'DAILY' ? (
           <QuickDailyView
@@ -107,9 +123,14 @@ function AppContent() {
             Financeiro NaJu • Reserva Rescisão Natan: <strong>R$ 10.000 Blindada</strong>
           </span>
         </div>
-        <div className="flex items-center gap-1 text-slate-400">
-          <span>Construído para a liberdade financeira de Júlia & Natan</span>
-          <Heart className="w-3.5 h-3.5 text-pink-500 fill-pink-500 inline" />
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-1 text-slate-400">
+            <span>Construído para a liberdade financeira de Júlia & Natan</span>
+            <Heart className="w-3.5 h-3.5 text-pink-500 fill-pink-500 inline" />
+          </div>
+          <button onClick={() => signOut(auth)} className="text-slate-500 hover:text-slate-300 underline">
+            Sair
+          </button>
         </div>
       </footer>
 
@@ -120,9 +141,43 @@ function AppContent() {
 }
 
 export default function App() {
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+      if (currentUser) {
+        if (!currentUser.email || !ALLOWED_EMAILS.includes(currentUser.email.toLowerCase())) {
+          await signOut(auth);
+          setUser(null);
+        } else {
+          setUser(currentUser);
+        }
+      } else {
+        setUser(null);
+      }
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-slate-950 flex items-center justify-center">
+        <div className="w-8 h-8 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <Login />;
+  }
+
   return (
     <FinanceProvider>
-      <AppContent />
+      <AppContent user={user} />
     </FinanceProvider>
   );
 }
+

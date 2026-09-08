@@ -26,17 +26,6 @@ export default function AIAdvisorCard() {
   } = useFinance();
 
   const [customQuestion, setCustomQuestion] = useState('');
-  const [geminiApiKey, setGeminiApiKey] = useState(() => {
-    try {
-      if (typeof window !== 'undefined' && window.localStorage) {
-        return localStorage.getItem('GEMINI_API_KEY') || '';
-      }
-    } catch (e) {
-      return '';
-    }
-    return '';
-  });
-  const [showKeyInput, setShowKeyInput] = useState(false);
   const [chatHistory, setChatHistory] = useState([]);
   const [loadingAi, setLoadingAi] = useState(false);
 
@@ -126,10 +115,8 @@ export default function AIAdvisorCard() {
     const newChat = [...chatHistory, { sender: 'user', text: userPrompt }];
     setChatHistory(newChat);
 
-    // Se possui chave do Gemini configurada, chama a API Gemini 1.5 Flash
-    if (geminiApiKey.trim()) {
-      try {
-        const systemPrompt = `Você é o consultor financeiro de Júlia e Natan no app Financeiro NaJu.
+    try {
+      const systemPrompt = `Você é o consultor financeiro de Júlia e Natan no app Financeiro NaJu.
 Dados reais atuais do casal:
 - Saldo em Débito: R$ ${caixaOperacional.toFixed(2)}
 - Reserva Protegida de Rescisão: R$ ${reservaProtegida.toFixed(2)} (Regra: NUNCA usar para despesas diárias)
@@ -139,65 +126,31 @@ Dados reais atuais do casal:
 - Teto semanal mercado+gasolina: R$ 400 (Restam R$ ${sobraSemana.toFixed(2)}).
 Seja prático, motivador, conciso e dê respostas diretas em português brasileiro.`;
 
-        const response = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiApiKey.trim()}`,
-          {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              contents: [
-                {
-                  parts: [
-                    { text: `${systemPrompt}\n\nPergunta do casal: ${userPrompt}` },
-                  ],
-                },
-              ],
-            }),
-          }
-        );
+      const response = await fetch('/api/ask', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          prompt: `${systemPrompt}\n\nPergunta do casal: ${userPrompt}`
+        }),
+      });
 
-        const data = await response.json();
-        const aiReply =
-          data?.candidates?.[0]?.content?.parts?.[0]?.text ||
-          'Não consegui processar a resposta da API Gemini. Verifique sua chave.';
+      if (!response.ok) throw new Error('Falha na API');
 
-        setChatHistory([...newChat, { sender: 'ai', text: aiReply }]);
-      } catch (err) {
-        setChatHistory([
-          ...newChat,
-          {
-            sender: 'ai',
-            text: `Erro ao conectar com a API Gemini (${err.message}). Respondendo com o motor local: Mantenha as compras congeladas no cartão e foque no lucro líquido do Natan!`,
-          },
-        ]);
-      }
-    } else {
-      // Resposta inteligente do motor local sem API key!
-      let respostaLocal = '';
-      const pLower = userPrompt.toLowerCase();
+      const data = await response.json();
+      const aiReply = data.result || 'Não consegui processar a resposta. Tente novamente.';
 
-      if (pLower.includes('pudim') || pLower.includes('lote')) {
-        respostaLocal = `🍮 Análise do Negócio de Pudim: Cada lote de 30 unidades gera R$ 195 de lucro líquido com margem de 65% e eficiência de R$ 47,50 por hora trabalhada. É a atividade mais rentável por hora do Natan! Vender 2 lotes por semana adiciona ~R$ 1.560 líquidos/mês no orçamento.`;
-      } else if (pLower.includes('uber') || pLower.includes('gasolina')) {
-        respostaLocal = `🚗 Análise do Uber: O combustível representa em média 25% a 30% do faturamento. Fature sempre visando o lucro líquido (faturamento menos gasolina). Atualmente sua eficiência média no Uber é de R$ ${natanMetricsMes.lucroPorHora.toFixed(2)} por hora.`;
-      } else if (pLower.includes('reserva') || pLower.includes('10.000') || pLower.includes('10000')) {
-        respostaLocal = `🛡️ Reserva Blindada: Os R$ 10.000 da rescisão continuam 100% protegidos. A regra de ouro é nunca utilizá-los para cobrir contas mensais de mercado ou cartão.`;
-      } else if (pLower.includes('cartao') || pLower.includes('parcela')) {
-        respostaLocal = `💳 Cartões de Crédito: A maior oportunidade do casal é a redução de R$ 4.003 em Outubro para R$ 148 em Julho. O compromisso é não criar nenhuma nova compra parcelada para desfrutar do alívio financeiro.`;
-      } else {
-        respostaLocal = `💡 Diagnóstico NaJu: Com base nos seus números de ${selectedMonth}, o foco principal agora é: ${nativeDiagnostic.priorityAction}. Seu débito livre é de R$ ${caixaOperacional.toFixed(2)} e restam R$ ${sobraSemana.toFixed(2)} do teto da semana.`;
-      }
-
-      setChatHistory([...newChat, { sender: 'ai', text: respostaLocal }]);
+      setChatHistory([...newChat, { sender: 'ai', text: aiReply }]);
+    } catch (err) {
+      setChatHistory([
+        ...newChat,
+        {
+          sender: 'ai',
+          text: `Erro de conexão com o servidor. Motor local de fallback: Mantenha as compras congeladas no cartão e foque no lucro líquido!`,
+        },
+      ]);
     }
 
     setLoadingAi(false);
-  };
-
-  const handleSaveApiKey = (e) => {
-    e.preventDefault();
-    localStorage.setItem('GEMINI_API_KEY', geminiApiKey.trim());
-    setShowKeyInput(false);
   };
 
   return (
@@ -212,7 +165,7 @@ Seja prático, motivador, conciso e dê respostas diretas em português brasilei
             <div className="flex items-center gap-2">
               <h3 className="font-extrabold text-white text-sm">Consultor IA Financeiro NaJu</h3>
               <span className="text-[10px] px-2 py-0.5 rounded-full bg-teal-500/20 text-teal-300 font-bold border border-teal-500/30">
-                {geminiApiKey ? 'Gemini 1.5 Ativo' : 'Motor Especialista Local (Gratuito)'}
+                Seguro & Privado
               </span>
             </div>
             <p className="text-xs text-slate-400">
@@ -220,43 +173,7 @@ Seja prático, motivador, conciso e dê respostas diretas em português brasilei
             </p>
           </div>
         </div>
-
-        <button
-          onClick={() => setShowKeyInput(!showKeyInput)}
-          className="text-[11px] px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 flex items-center gap-1.5 transition self-start sm:self-auto"
-          title="Configurar chave de IA opcional"
-        >
-          <Key className="w-3 h-3 text-amber-400" />
-          <span>{geminiApiKey ? 'Chave de IA Configurada' : 'Adicionar Chave IA (Opcional)'}</span>
-        </button>
       </div>
-
-      {/* Input Opcional de Chave de API */}
-      {showKeyInput && (
-        <form onSubmit={handleSaveApiKey} className="p-3 bg-slate-950/80 rounded-2xl border border-slate-800 space-y-2 text-xs animate-fadeIn">
-          <div className="flex justify-between items-center text-slate-300 font-semibold">
-            <span>Chave Google Gemini API (Opcional / Gratuita):</span>
-            <span className="text-[10px] text-emerald-400 font-normal">
-              * O app já funciona 100% sem chave!
-            </span>
-          </div>
-          <div className="flex gap-2">
-            <input
-              type="password"
-              placeholder="Cole sua API Key do Google AI Studio..."
-              value={geminiApiKey}
-              onChange={(e) => setGeminiApiKey(e.target.value)}
-              className="flex-1 px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-700 text-white text-xs font-mono"
-            />
-            <button
-              type="submit"
-              className="px-4 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs"
-            >
-              Salvar
-            </button>
-          </div>
-        </form>
-      )}
 
       {/* Resumo e Ação Recomendada pela IA */}
       <div className="grid grid-cols-1 md:grid-cols-12 gap-4">

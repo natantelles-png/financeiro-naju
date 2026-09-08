@@ -1,0 +1,31 @@
+{
+  "entities": {
+    "userProfile": {
+      "title": "UserProfile",
+      "description": "Allowed user profile",
+      "type": "object",
+      "properties": {
+        "email": { "type": "string" },
+        "createdAt": { "type": "string" }
+      }
+    },
+    "financeData": {
+      "title": "FinanceData",
+      "description": "Financial state for the household",
+      "type": "object",
+      "properties": {
+        "data": { "type": "string" }
+      }
+    }
+  },
+  "firestore": {
+    "users/{userId}": {
+      "schema": "userProfile",
+      "description": "User profiles"
+    },
+    "financeData/{docId}": {
+      "schema": "financeData",
+      "description": "General finance state"
+    }
+  }
+}

@@ -1,0 +1,6 @@
+{
+  "name": "Financeiro NaJu",
+  "description": "Gestão Inteligente Exclusiva para Júlia & Natan",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
