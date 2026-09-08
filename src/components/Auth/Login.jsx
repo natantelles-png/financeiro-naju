@@ -30,7 +30,15 @@ export default function Login() {
       // Successfully authenticated and allowed
     } catch (err) {
       console.error('Login error:', err);
-      setError('Erro ao fazer login com o Google.');
+      let errorMsg = err.message;
+      if (err.code === 'auth/unauthorized-domain') {
+        errorMsg = 'Domínio não autorizado. Adicione este site no painel do Firebase (Authentication > Settings > Authorized domains).';
+      } else if (err.code === 'auth/popup-closed-by-user') {
+        errorMsg = 'A janela de login foi fechada antes de concluir.';
+      } else if (err.code === 'auth/popup-blocked') {
+        errorMsg = 'A janela de login foi bloqueada pelo seu navegador móvel. Tente desativar o bloqueador de pop-ups.';
+      }
+      setError(`Erro: ${errorMsg}`);
       setLoading(false);
     }
   };
