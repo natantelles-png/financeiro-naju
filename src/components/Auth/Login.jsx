@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { auth } from '../../firebase';
 import { signInWithPopup, GoogleAuthProvider, signOut } from 'firebase/auth';
+import { PWAInstallButton } from '../PWAInstallButton';
 
 const ALLOWED_EMAILS = [
   'natantelles@gmail.com',
@@ -55,6 +56,10 @@ export default function Login() {
         <div>
           <h1 className="text-2xl font-bold text-slate-100">Financeiro NaJu</h1>
           <p className="text-slate-400 mt-2 text-sm">Acesso exclusivo e seguro</p>
+        </div>
+
+        <div className="flex justify-center w-full">
+          <PWAInstallButton />
         </div>
 
         {error && (
