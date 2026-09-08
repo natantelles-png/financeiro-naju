@@ -194,18 +194,80 @@ export default function VoiceInputBar() {
 
         {/* Card de Pré-visualização da Interpretação (Confirmação com 1 toque) */}
         {interpretedAction && (
-          <div className="mt-3 p-3 rounded-xl bg-slate-950 border border-indigo-700/60 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 animate-fadeIn">
+          <div className="mt-3 p-3 rounded-xl bg-slate-950 border border-indigo-700/60 flex flex-col gap-3 animate-fadeIn">
             <div className="flex items-start gap-2 text-xs">
               <Sparkles className="w-4 h-4 text-indigo-400 flex-shrink-0 mt-0.5" />
-              <div>
-                <div className="font-bold text-white flex items-center gap-1.5">
+              <div className="flex-1 w-full">
+                <div className="font-bold text-white flex items-center gap-1.5 mb-2">
                   <span>{interpretedAction.actionTitle}</span>
                   <span className="text-[10px] px-1.5 py-0.2 rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
                     {interpretedAction.categoria}
                   </span>
                 </div>
-                <div className="text-slate-300 text-[11px] mt-0.5">
-                  {interpretedAction.resumo}
+                
+                {/* Editable Fields based on action type */}
+                {interpretedAction.type !== 'UNKNOWN' && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3 p-3 bg-slate-900 rounded-lg border border-slate-800">
+                    {interpretedAction.valor !== undefined && (
+                      <div className="flex flex-col gap-1">
+                        <label className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider">Valor (R$)</label>
+                        <input 
+                          type="number" 
+                          value={interpretedAction.valor} 
+                          onChange={(e) => setInterpretedAction({...interpretedAction, valor: Number(e.target.value)})}
+                          className="bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-white text-xs focus:border-indigo-500 focus:outline-none"
+                        />
+                      </div>
+                    )}
+                    
+                    {interpretedAction.categoria !== undefined && interpretedAction.type === 'WEEKLY_EXPENSE' && (
+                      <div className="flex flex-col gap-1">
+                        <label className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider">Categoria</label>
+                        <input 
+                          type="text" 
+                          value={interpretedAction.categoria} 
+                          onChange={(e) => setInterpretedAction({...interpretedAction, categoria: e.target.value})}
+                          className="bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-white text-xs focus:border-indigo-500 focus:outline-none"
+                        />
+                      </div>
+                    )}
+
+                    {interpretedAction.faturamento !== undefined && (
+                      <div className="flex flex-col gap-1">
+                        <label className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider">Faturamento (R$)</label>
+                        <input 
+                          type="number" 
+                          value={interpretedAction.faturamento} 
+                          onChange={(e) => {
+                            const newFat = Number(e.target.value);
+                            const lucro = newFat - (interpretedAction.custos || 0);
+                            setInterpretedAction({...interpretedAction, faturamento: newFat, lucroLiquido: lucro});
+                          }}
+                          className="bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-white text-xs focus:border-indigo-500 focus:outline-none"
+                        />
+                      </div>
+                    )}
+
+                    {interpretedAction.combustivel !== undefined && (
+                      <div className="flex flex-col gap-1">
+                        <label className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider">Gasolina (R$)</label>
+                        <input 
+                          type="number" 
+                          value={interpretedAction.combustivel} 
+                          onChange={(e) => {
+                            const newComb = Number(e.target.value);
+                            const lucro = (interpretedAction.faturamento || 0) - newComb;
+                            setInterpretedAction({...interpretedAction, combustivel: newComb, custos: newComb, lucroLiquido: lucro});
+                          }}
+                          className="bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-white text-xs focus:border-indigo-500 focus:outline-none"
+                        />
+                      </div>
+                    )}
+                  </div>
+                )}
+                
+                <div className="text-slate-400 text-[11px]">
+                  {interpretedAction.type !== 'UNKNOWN' ? 'Você pode ajustar os valores acima se o sistema entendeu errado antes de confirmar.' : interpretedAction.resumo}
                 </div>
               </div>
             </div>
@@ -213,13 +275,13 @@ export default function VoiceInputBar() {
             {interpretedAction.type !== 'UNKNOWN' ? (
               <button
                 onClick={handleConfirmAction}
-                className="w-full sm:w-auto px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-extrabold text-xs shadow-md shadow-emerald-600/30 transition flex items-center justify-center gap-1.5 flex-shrink-0"
+                className="w-full px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-extrabold text-xs shadow-md shadow-emerald-600/30 transition flex items-center justify-center gap-1.5"
               >
-                <CheckCircle2 className="w-3.5 h-3.5" />
+                <CheckCircle2 className="w-4 h-4" />
                 <span>Confirmar & Salvar</span>
               </button>
             ) : (
-              <div className="text-[10px] text-amber-400 italic">
+              <div className="text-[10px] text-amber-400 italic text-center w-full">
                 Não compreendido. Tente falar novamente com mais clareza.
               </div>
             )}

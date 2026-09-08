@@ -13,6 +13,7 @@ import {
   Zap,
   SlidersHorizontal,
   Download,
+  Database,
 } from 'lucide-react';
 
 export default function Navbar({ appMode, setAppMode, activeTab, setActiveTab, onOpenBackup }) {
@@ -36,6 +37,7 @@ export default function Navbar({ appMode, setAppMode, activeTab, setActiveTab, o
     { id: 'weeklyBudget', label: 'Teto Semanal (R$ 400)', icon: Wallet },
     { id: 'subscriptions', label: 'Assinaturas & Seguro', icon: FileCheck },
     { id: 'weeklyMeeting', label: 'Reunião de 15 Min', icon: FileCheck },
+    { id: 'database', label: 'Base de Dados', icon: Database },
   ];
 
   return (

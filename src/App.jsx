@@ -17,6 +17,7 @@ import UpcomingBills from './components/Cashflow/UpcomingBills';
 import SubscriptionsAudit from './components/Subscriptions/SubscriptionsAudit';
 import WeeklyMeetingGuide from './components/WeeklyMeeting/WeeklyMeetingGuide';
 import BackupModal from './components/Modals/BackupModal';
+import DatabaseEditor from './components/DatabaseEditor/DatabaseEditor';
 import { ShieldCheck, Heart, Mic, Zap } from 'lucide-react';
 
 import { auth } from './firebase';
@@ -111,6 +112,8 @@ function AppContent({ user }) {
             {activeTab === 'subscriptions' && <SubscriptionsAudit />}
 
             {activeTab === 'weeklyMeeting' && <WeeklyMeetingGuide />}
+            
+            {activeTab === 'database' && <DatabaseEditor />}
           </div>
         )}
       </main>
